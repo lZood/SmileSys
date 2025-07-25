@@ -1,5 +1,6 @@
 export async function createCalendarEvent(appointment: {
   patient_name: string;
+  patient_email: string;
   date: string;
   time: string;
   duration: number;
@@ -12,7 +13,8 @@ export async function createCalendarEvent(appointment: {
 
     const event = {
       summary: `Cita: ${appointment.treatment_type}`,
-      description: `Paciente: ${appointment.patient_name}\n${appointment.notes || ''}`,
+      description: `Paciente: ${appointment.patient_name}
+${appointment.notes || ''}`,
       start: {
         dateTime: startDateTime.toISOString(),
         timeZone: 'America/Mexico_City',
@@ -21,6 +23,9 @@ export async function createCalendarEvent(appointment: {
         dateTime: endDateTime.toISOString(),
         timeZone: 'America/Mexico_City',
       },
+      attendees: [
+        { email: appointment.patient_email },
+      ],
       reminders: {
         useDefault: false,
         overrides: [
@@ -30,7 +35,7 @@ export async function createCalendarEvent(appointment: {
       },
     };
 
-    const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -40,6 +45,8 @@ export async function createCalendarEvent(appointment: {
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Failed to create calendar event:', errorData);
       throw new Error('Failed to create calendar event');
     }
 
